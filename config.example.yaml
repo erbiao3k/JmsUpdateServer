@@ -1,0 +1,66 @@
+# 每轮结束后等待这么久再开始下一轮。上一轮未结束时不会重叠执行。
+interval: 5m
+# 每天只在这个时间段内执行，使用本机本地时间。开始时刻会执行，结束时刻不再执行。
+window_start: "09:00"
+window_end: "20:00"
+
+aliyun:
+  tag_key: jms-manage
+  # DescribeRegions 的入口。各账号没单独写时使用这个地址，各地域实际请求使用返回的 RegionEndpoint。
+  bootstrap_endpoint: ecs.cn-hangzhou.aliyuncs.com
+  # 每个账号单独扫描。填写 accounts 后，不再使用外层的 access_key_id。
+  # 只有一个账号时，也可以不写 accounts，直接在 aliyun 下写 access_key_id 和 access_key_secret。
+  accounts:
+    - name: account-a
+      access_key_id: ""
+      access_key_secret: ""
+    - name: account-b
+      access_key_id: ""
+      access_key_secret: ""
+
+# 这些实例 ID 不拉详情、不探测、不改密、不写入 JumpServer，也不告警。
+blacklist: []
+
+jumpserver:
+  base_url: https://jumpserver.example.com
+  # Bearer 来自 /api/v1/authentication/auth/；Private Token 把 auth_scheme 改成 Token。
+  token: ""
+  auth_scheme: Bearer
+  org_id: ""
+  # 为 0 时按平台名称查找。平台类别必须是 host。
+  linux_platform_id: 0
+  windows_platform_id: 0
+  linux_platform_name: Linux
+  windows_platform_name: Windows
+  # 只在新建资产时挂到这些节点，已有资产不挪节点。
+  nodes_display: []
+
+probe:
+  timeout: 3s
+  concurrency: 32
+  region_concurrency: 5
+  # 先探测内网，再探测外网，同一侧按列表顺序尝试。
+  linux_ports: [22, 2221]
+  windows_ports: [3389]
+
+# 通过云助手在线修改 Linux root / Windows Administrator，不重启。
+# 省略 enabled 时默认打开。dry-run 不会下发命令。设为 false 可关闭。
+# RAM 需要 ecs:RunCommand、ecs:DescribeInvocationResults。
+# JumpServer 用户需要账号和账号模板的新增、修改权限。
+password_reset:
+  enabled: true
+  # Linux root 与 Windows Administrator 使用同一密码。
+  # 8-30 位，至少包含大写、小写、数字、特殊字符中的三类，不能以 / 开头。
+  password: ""
+  timeout: 60s
+  concurrency: 8
+
+# 实例不是 Running、云助手不在线，以及其他失败，都会发到这个自定义机器人。
+# 开启签名校验时填写 secret，否则留空。
+feishu:
+  webhook: ""
+  secret: ""
+
+output:
+  inventory: inventory.json
+  error_log: logs/sync-error.log
