@@ -3,7 +3,6 @@ inventory.json
 logs/
 
 # 本地编译产物
-sync
 sync.exe
 sync-linux-amd64
 
